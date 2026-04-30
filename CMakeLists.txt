@@ -7,6 +7,10 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/nozzle)
 file(GLOB ADDON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 file(GLOB ADDON_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
 
+if(APPLE)
+    list(APPEND ADDON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/tcxNozzle_blit.mm)
+endif()
+
 if(NOT ADDON_SOURCES)
     add_library(${ADDON_NAME} INTERFACE)
     target_include_directories(${ADDON_NAME} INTERFACE
@@ -27,6 +31,13 @@ else()
         TrussC
         nozzle
     )
+    if(APPLE)
+        target_link_libraries(${ADDON_NAME} PUBLIC
+            "-framework Metal"
+            "-framework IOSurface"
+            "-framework Foundation"
+        )
+    endif()
 endif()
 
 add_library(tc::${ADDON_NAME} ALIAS ${ADDON_NAME})
