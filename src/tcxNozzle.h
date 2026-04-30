@@ -109,6 +109,7 @@ public:
 
     bool send(const tc::Pixels& pixels);
     bool send(tc::Fbo& fbo);
+    bool send(const tc::Texture& texture);
 
     std::string getName() const { return name_; }
     int getWidth() const { return width_; }
@@ -123,6 +124,7 @@ private:
     bool setup_ = false;
     uint64_t frame_count_ = 0;
     std::vector<unsigned char> pixel_buffer_;
+    tc::Fbo temp_fbo_;
 };
 
 class NozzleReceiver {

@@ -22,6 +22,23 @@ bool NozzleSender::send(tc::Fbo& fbo) {
     return send(pixel_buffer_.data(), w, h, 4);
 }
 
+bool NozzleSender::send(const tc::Texture& texture) {
+    if (!setup_ || !texture.isAllocated()) return false;
+    int w = texture.getWidth();
+    int h = texture.getHeight();
+
+    if (!temp_fbo_.isAllocated() ||
+        temp_fbo_.getWidth() != w || temp_fbo_.getHeight() != h) {
+        temp_fbo_.allocate(w, h);
+    }
+
+    temp_fbo_.begin();
+    texture.draw(0, 0);
+    temp_fbo_.end();
+
+    return send(temp_fbo_);
+}
+
 bool NozzleReceiver::receive(tc::Pixels& pixels) {
     if (!connected_ || !receiver_) return false;
     frame_new_ = false;
