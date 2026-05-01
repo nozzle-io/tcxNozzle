@@ -1,6 +1,5 @@
 #include "tcxNozzle.h"
-#include <tc/TrussC.h>
-#include <sokol/sokol_gfx.h>
+#include <TrussC.h>
 #include <nozzle/nozzle.hpp>
 #include <nozzle/pixel_access.hpp>
 #include <cstring>

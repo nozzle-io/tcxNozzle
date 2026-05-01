@@ -3,7 +3,8 @@
 #include <string>
 #include <vector>
 
-namespace tc { class Pixels; class Texture; class Fbo; }
+namespace trussc { class Pixels; class Texture; class Fbo; }
+namespace tc = trussc;
 
 namespace tcx {
 
