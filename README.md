@@ -1,5 +1,8 @@
 # tcxNozzle
 
+> This codebase is currently in its AI-slob prototyping phase: the code runs on momentum, vibes, and plausible intent.
+> Proper debugging will be introduced once demand graduates from hypothetical to measurable.
+
 [Nozzle](https://github.com/nozzle-io/nozzle) GPU texture sharing addon for [TrussC](https://github.com/TrussC-org/TrussC).
 
 Share textures between TrussC applications via nozzle's cross-process GPU sharing (Metal/IOSurface on macOS, D3D11 on Windows).
@@ -59,3 +62,7 @@ Or use as a CMake subdirectory. nozzle is included as a submodule.
 ## License
 
 MIT
+
+Third-party dependencies:
+
+- [nozzle](https://github.com/nozzle-io/nozzle) — MIT
