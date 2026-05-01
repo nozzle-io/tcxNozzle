@@ -26,10 +26,10 @@ jobs:
           ./tools/build_mac.command
       - name: Generate test project
         run: |
-          mkdir test-project && cd test-project
+          mkdir -p test-project/src && cd test-project
           printf 'tcxNozzle\n' > addons.make
-          printf '#include "tcxNozzle.h"\nint main() { return 0; }\n' > main.cpp
-          "$GITHUB_WORKSPACE/TrussC/tools/bin/trusscli" update -p .
+          printf '#include "tcxNozzle.h"\nint main() { return 0; }\n' > src/main.cpp
+          "$GITHUB_WORKSPACE/TrussC/tools/trusscli.app/Contents/MacOS/trusscli" update -p .
       - name: Build
         run: |
           cd test-project/build-macos
@@ -55,12 +55,9 @@ jobs:
       - name: Generate test project
         shell: bash
         run: |
-          mkdir -p test-project && cd test-project
+          mkdir -p test-project/src && cd test-project
           echo "tcxNozzle" > addons.make
-          cat > main.cpp << 'EOF'
-          #include "tcxNozzle.h"
-          int main() { return 0; }
-          EOF
+          printf '#include "tcxNozzle.h"\nint main() { return 0; }\n' > src/main.cpp
           "$GITHUB_WORKSPACE/TrussC/tools/bin/trusscli.exe" update -p .
       - name: Build
         shell: bash
