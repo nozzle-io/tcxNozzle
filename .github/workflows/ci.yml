@@ -13,10 +13,30 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          path: tcxNozzle
+      - name: Clone TrussC
+        run: git clone --depth 1 https://github.com/TrussC-org/TrussC.git TrussC
+      - name: Link addon into TrussC
+        run: ln -s $GITHUB_WORKSPACE/tcxNozzle TrussC/addons/tcxNozzle
+      - name: Build trusscli
+        run: |
+          cd TrussC
+          sed -i '' 's/read -r -p/#read -r -p/g' tools/build_mac.command
+          sed -i '' 's/open /#open /g' tools/build_mac.command
+          ./tools/build_mac.command
+      - name: Generate test project
+        run: |
+          mkdir test-project && cd test-project
+          echo "tcxNozzle" > addons.make
+          cat > main.cpp << 'EOF'
+          #include "tcxNozzle.h"
+          int main() { return 0; }
+          EOF
+          $GITHUB_WORKSPACE/TrussC/tools/bin/trusscli update -p .
       - name: Build
         run: |
-          cmake -B build -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
-          cmake --build build
+          cd test-project/build-macos
+          cmake --build . --config Release
 
   build-windows:
     runs-on: windows-latest
@@ -24,7 +44,27 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          path: tcxNozzle
+      - name: Clone TrussC
+        run: git clone --depth 1 https://github.com/TrussC-org/TrussC.git TrussC
+      - name: Link addon into TrussC
+        run: New-Item -ItemType SymbolicLink -Path TrussC\addons\tcxNozzle -Target $env:GITHUB_WORKSPACE\tcxNozzle
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Build trusscli
+        run: |
+          cd TrussC
+          ./tools/build_win.bat
+      - name: Generate test project
+        run: |
+          New-Item -ItemType Directory -Force -Path test-project
+          Set-Content -Path test-project\addons.make -Value "tcxNozzle"
+          Set-Content -Path test-project\main.cpp -Value @'
+          #include "tcxNozzle.h"
+          int main() { return 0; }
+          '@
+          $env:GITHUB_WORKSPACE\TrussC\tools\bin\trusscli.exe update -p test-project
       - name: Build
         run: |
-          cmake -B build
-          cmake --build build --config Release
+          cd test-project\build-windows
+          cmake --build . --config Release
