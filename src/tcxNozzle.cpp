@@ -175,7 +175,7 @@ bool NozzleSender::send(const tc::Texture &texture) {
         void *nozzle_tex = nozzle::metal::get_texture(writable.get_texture());
         if (nozzle_tex) {
             sg_mtl_image_info mtl_info = sg_mtl_query_image_info(img);
-            void *sokol_tex = mtl_info.tex[0];
+            void *sokol_tex = const_cast<void *>(mtl_info.tex[0]);
             if (sokol_tex) {
                 gpu_blit_ok = tcx::blit::copy_gpu_texture(nozzle_tex, sokol_tex, w, h, nfmt_u32);
             }
