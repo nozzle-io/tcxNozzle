@@ -51,11 +51,11 @@ static nozzle::texture_format sg_to_nozzle_format(sg_pixel_format fmt) {
 
 bool NozzleSender::setup(const std::string &name, int width, int height) {
     if (setup_) close();
-    auto result = nozzle::sender::create(nozzle::sender_desc{
-        .name = name,
-        .application_name = "TrussC",
-        .ring_buffer_size = 3
-    });
+    nozzle::sender_desc desc;
+    desc.name = name;
+    desc.application_name = "TrussC";
+    desc.ring_buffer_size = 3;
+    auto result = nozzle::sender::create(std::move(desc));
     if (!result.ok()) return false;
     sender_ = new nozzle::sender(std::move(result.value()));
     name_ = name;
@@ -97,11 +97,11 @@ bool NozzleSender::send(const unsigned char *pixels, int width, int height, int 
               : (channels == 2) ? nozzle::texture_format::rg8_unorm
               : nozzle::texture_format::rgba8_unorm;
 
-    auto frame_result = sender->acquire_writable_frame(nozzle::texture_desc{
-        .width = static_cast<uint32_t>(width),
-        .height = static_cast<uint32_t>(height),
-        .format = nfmt
-    });
+    nozzle::texture_desc td;
+    td.width = static_cast<uint32_t>(width);
+    td.height = static_cast<uint32_t>(height);
+    td.format = nfmt;
+    auto frame_result = sender->acquire_writable_frame(td);
     if (!frame_result.ok()) return false;
 
     auto &writable = frame_result.value();
@@ -160,11 +160,11 @@ bool NozzleSender::send(const tc::Texture &texture) {
     uint32_t nfmt_u32 = static_cast<uint32_t>(nfmt);
 
     auto *sender = get_sender(sender_);
-    auto frame_result = sender->acquire_writable_frame(nozzle::texture_desc{
-        .width = static_cast<uint32_t>(w),
-        .height = static_cast<uint32_t>(h),
-        .format = nfmt
-    });
+    nozzle::texture_desc td;
+    td.width = static_cast<uint32_t>(w);
+    td.height = static_cast<uint32_t>(h);
+    td.format = nfmt;
+    auto frame_result = sender->acquire_writable_frame(td);
     if (!frame_result.ok()) return false;
 
     auto &writable = frame_result.value();
@@ -186,7 +186,7 @@ bool NozzleSender::send(const tc::Texture &texture) {
         ID3D11Texture2D *nozzle_tex = nozzle::d3d11::get_texture(writable.get_texture());
         if (nozzle_tex) {
             sg_d3d11_image_info d3d_info = sg_d3d11_query_image_info(img);
-            void *sokol_tex = d3d_info.tex2d;
+            void *sokol_tex = const_cast<void *>(d3d_info.tex2d);
             if (sokol_tex) {
                 gpu_blit_ok = tcx::blit::copy_gpu_texture(nozzle_tex, sokol_tex, w, h, nfmt_u32);
             }
@@ -239,17 +239,17 @@ std::vector<NozzleSenderInfo> NozzleReceiver::findSenders() {
     auto list = nozzle::enumerate_senders();
     std::vector<NozzleSenderInfo> result;
     for (auto &s : list) {
-        result.push_back({s.name, s.application_name, static_cast<int>(s.width), static_cast<int>(s.height)});
+        result.push_back({s.name, s.application_name});
     }
     return result;
 }
 
 bool NozzleReceiver::connect(const std::string &senderName) {
     if (connected_) disconnect();
-    auto result = nozzle::receiver::create(nozzle::receiver_desc{
-        .name = senderName,
-        .application_name = "TrussC"
-    });
+    nozzle::receiver_desc desc;
+    desc.name = senderName;
+    desc.application_name = "TrussC";
+    auto result = nozzle::receiver::create(std::move(desc));
     if (!result.ok()) return false;
     receiver_ = new nozzle::receiver(std::move(result.value()));
     sender_name_ = senderName;

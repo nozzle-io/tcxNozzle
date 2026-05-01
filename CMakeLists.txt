@@ -16,6 +16,8 @@ file(GLOB ADDON_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
 
 if(APPLE)
     list(APPEND ADDON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/tcxNozzle_blit.mm)
+elseif(WIN32)
+    list(APPEND ADDON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/tcxNozzle_blit_d3d11.cpp)
 endif()
 
 if(NOT ADDON_SOURCES)

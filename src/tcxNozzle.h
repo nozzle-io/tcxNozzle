@@ -11,8 +11,6 @@ namespace tcx {
 struct NozzleSenderInfo {
     std::string name;
     std::string application_name;
-    int width;
-    int height;
 };
 
 class NozzleSender {
