@@ -50,6 +50,8 @@ else()
             "-framework IOSurface"
             "-framework Foundation"
         )
+    elseif(UNIX AND NOT APPLE)
+        target_link_libraries(${ADDON_NAME} PUBLIC GL)
     endif()
 endif()
 

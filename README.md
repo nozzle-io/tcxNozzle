@@ -5,7 +5,7 @@
 
 [Nozzle](https://github.com/nozzle-io/nozzle) GPU texture sharing addon for [TrussC](https://github.com/TrussC-org/TrussC).
 
-Share textures between TrussC applications via nozzle's cross-process GPU sharing (Metal/IOSurface on macOS, D3D11 on Windows).
+Share textures between TrussC applications via nozzle's cross-process GPU sharing (Metal/IOSurface on macOS, D3D11 on Windows, DMA-BUF/OpenGL on Linux).
 
 ## Usage
 
