@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    uses: 2bbb/trussc-actions/.github/workflows/build-addon.yml@v1
+    uses: 2bbb/trussc-actions/.github/workflows/build-addon.yml@main
     with:
       addon_name: "tcxNozzle"
       extra_apt_packages: "libdrm-dev libgbm-dev libegl-dev libgl-dev"
