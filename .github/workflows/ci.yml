@@ -7,60 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  build-macos:
-    runs-on: macos-14
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          path: tcxNozzle
-      - name: Clone TrussC
-        run: git clone --depth 1 https://github.com/TrussC-org/TrussC.git TrussC
-      - name: Link addon into TrussC
-        run: ln -s $GITHUB_WORKSPACE/tcxNozzle TrussC/addons/tcxNozzle
-      - name: Build trusscli
-        run: |
-          cd TrussC
-          sed -i '' 's/read -r -p/#read -r -p/g' tools/build_mac.command
-          sed -i '' 's/open /#open /g' tools/build_mac.command
-          ./tools/build_mac.command
-      - name: Generate test project
-        run: |
-          mkdir -p test-project/src && cd test-project
-          printf 'tcxNozzle\n' > addons.make
-          printf '#include "tcxNozzle.h"\nint main() { return 0; }\n' > src/main.cpp
-          "$GITHUB_WORKSPACE/TrussC/tools/trusscli.app/Contents/MacOS/trusscli" update -p .
-      - name: Build
-        run: |
-          cd test-project/build-macos
-          cmake --build . --config Release
-
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          path: tcxNozzle
-      - name: Clone TrussC
-        run: git clone --depth 1 https://github.com/TrussC-org/TrussC.git TrussC
-      - name: Link addon into TrussC
-        run: New-Item -ItemType SymbolicLink -Path TrussC\addons\tcxNozzle -Target $env:GITHUB_WORKSPACE\tcxNozzle
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-      - name: Build trusscli
-        run: |
-          cd TrussC
-          ./tools/build_win.bat
-      - name: Generate test project
-        shell: bash
-        run: |
-          mkdir -p test-project/src && cd test-project
-          echo "tcxNozzle" > addons.make
-          printf '#include "tcxNozzle.h"\nint main() { return 0; }\n' > src/main.cpp
-          "$GITHUB_WORKSPACE/TrussC/tools/bin/trusscli.exe" update -p .
-      - name: Build
-        shell: bash
-        run: |
-          cd test-project/build-windows
-          cmake --build . --config Release
+  build:
+    uses: 2bbb/trussc-actions/.github/workflows/build-addon.yml@v1
+    with:
+      addon_name: "tcxNozzle"
+      extra_apt_packages: "libdrm-dev libgbm-dev libegl-dev libgl-dev"
