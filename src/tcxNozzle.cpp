@@ -105,12 +105,12 @@ bool NozzleSender::send(const unsigned char *pixels, int width, int height, int 
     if (!frame_result.ok()) return false;
 
     auto &writable = frame_result.value();
-    auto lock_result = nozzle::lock_writable_pixels(writable);
+    auto lock_result = nozzle::lock_writable_pixels_with_origin(writable, nozzle::texture_origin::top_left);
     if (!lock_result.ok()) return false;
 
     auto &mapped = lock_result.value();
     uint32_t src_row_bytes = static_cast<uint32_t>(width) * channels;
-    uint32_t dst_row_bytes = mapped.row_bytes;
+    uint32_t dst_row_bytes = mapped.row_stride_bytes;
 
     if (src_row_bytes == dst_row_bytes) {
         std::memcpy(mapped.data, pixels, static_cast<size_t>(height) * dst_row_bytes);
@@ -296,7 +296,7 @@ bool NozzleReceiver::receive(tc::Pixels &pixels) {
     width_ = static_cast<int>(info.width);
     height_ = static_cast<int>(info.height);
 
-    auto lock_result = nozzle::lock_frame_pixels(frm);
+    auto lock_result = nozzle::lock_frame_pixels_with_origin(frm, nozzle::texture_origin::top_left);
     if (!lock_result.ok()) {
         frm.release();
         return false;
@@ -308,7 +308,7 @@ bool NozzleReceiver::receive(tc::Pixels &pixels) {
         pixels.allocate(width_, height_, channels);
     }
 
-    uint32_t src_row_bytes = mapped.row_bytes;
+    uint32_t src_row_bytes = mapped.row_stride_bytes;
     uint32_t dst_row_bytes = static_cast<uint32_t>(width_) * channels;
 
     if (src_row_bytes == dst_row_bytes) {
