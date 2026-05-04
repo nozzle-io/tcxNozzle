@@ -14,14 +14,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 file(GLOB ADDON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 file(GLOB ADDON_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
 
-# Exclude platform-specific blit files from the generic glob
-list(FILTER ADDON_SOURCES EXCLUDE REGEX ".*_blit_d3d11\\.cpp$")
-list(FILTER ADDON_SOURCES EXCLUDE REGEX ".*_blit\\.mm$")
-
 if(APPLE)
-    list(APPEND ADDON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/tcxNozzle_blit.mm)
+    list(APPEND ADDON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/platform/macos/tcxNozzle_blit.mm)
 elseif(WIN32)
-    list(APPEND ADDON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/tcxNozzle_blit_d3d11.cpp)
+    list(APPEND ADDON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/platform/win/tcxNozzle_blit_d3d11.cpp)
 endif()
 
 if(NOT ADDON_SOURCES)
