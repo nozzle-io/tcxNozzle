@@ -11,4 +11,6 @@ jobs:
     uses: 2bbb/trussc-actions/.github/workflows/build-addon.yml@main
     with:
       addon_name: "tcxNozzle"
+      test_app: "testApp"
+      test_mode: "test"
       extra_apt_packages: "libdrm-dev libgbm-dev libegl-dev libgl-dev"
