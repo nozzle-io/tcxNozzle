@@ -13,4 +13,5 @@ jobs:
       addon_name: "tcxNozzle"
       test_app: "testApp"
       test_mode: "test"
+      extra_addons: "2bbb/tcxUnitTests tcxUnitTests"
       extra_apt_packages: "libdrm-dev libgbm-dev libegl-dev libgl-dev"
