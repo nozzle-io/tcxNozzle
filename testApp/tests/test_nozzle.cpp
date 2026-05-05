@@ -137,6 +137,9 @@ int main() {
         SKIP("cross-process: connect succeeds");
         SKIP("cross-process: is connected");
         SKIP("cross-process: receive succeeds");
+        SKIP("cross-process: width matches");
+        SKIP("cross-process: height matches");
+        SKIP("cross-process: frame is new");
         SKIP("multi-send: frame count is 5");
     } else {
         {
@@ -180,11 +183,16 @@ int main() {
         }
 
         {
+            tcx::NozzleSender sender;
+            sender.setup("tcx-discover-test", 4, 4);
+            std::vector<unsigned char> px(4 * 4 * 4, 0);
+            sender.send(px.data(), 4, 4, 4);
+
             auto senders = tcx::NozzleReceiver::findSenders();
             TEST_GT(senders.size(), size_t(0), "discovery: found at least one sender");
             bool found = false;
             for (auto &s : senders) {
-                if (s.name == "tcx-pixel-test" || s.name == "tcx-test-sender") {
+                if (s.name == "tcx-discover-test") {
                     found = true;
                     break;
                 }
