@@ -1,3 +1,4 @@
+#include <TrussC.h>
 #include <tcxNozzle.h>
 #include <iostream>
 #include <chrono>
