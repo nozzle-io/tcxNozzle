@@ -7,6 +7,7 @@
 static int g_total = 0;
 static int g_passed = 0;
 static int g_failed = 0;
+static int g_skipped = 0;
 
 static bool test(bool cond, const char *name, const char *file, int line) {
     g_total++;
@@ -53,13 +54,36 @@ static bool test_gt(T1 actual, T2 expected, const char *name, const char *file, 
     return false;
 }
 
+static void skip(const char *name) {
+    g_total++;
+    g_skipped++;
+    std::cout << "\033[1;33m[ SKIP ]\033[0m " << name << std::endl;
+}
+
 #define TEST(x, ...)      test(x, __VA_ARGS__, __FILE__, __LINE__)
 #define TEST_EQ(x, y, ...) test_eq(x, y, __VA_ARGS__, __FILE__, __LINE__)
 #define TEST_GT(x, y, ...) test_gt(x, y, __VA_ARGS__, __FILE__, __LINE__)
+#define SKIP(...)         skip(__VA_ARGS__)
+
+static bool ipc_available() {
+    // Probe: try to create and immediately destroy a sender.
+    // If shm_open works, IPC is available.
+    tcx::NozzleSender probe;
+    bool ok = probe.setup("_nozzle_ipc_probe__", 1, 1);
+    if (ok) probe.close();
+    return ok;
+}
 
 int main() {
     auto start = std::chrono::high_resolution_clock::now();
     std::cout << "=== tcxNozzle headless tests ===" << std::endl;
+
+    const bool have_ipc = ipc_available();
+    if (!have_ipc) {
+        std::cout << "\033[1;33mIPC not available — skipping IPC-dependent tests\033[0m" << std::endl;
+    }
+
+    // --- Unit tests (no IPC required) ---
 
     {
         tcx::NozzleSender sender;
@@ -68,46 +92,6 @@ int main() {
         TEST_EQ(sender.getWidth(), 0, "sender default: zero width");
         TEST_EQ(sender.getHeight(), 0, "sender default: zero height");
         TEST_EQ(sender.getFrameCount(), uint64_t(0), "sender default: zero frame count");
-    }
-
-    {
-        tcx::NozzleSender sender;
-        bool ok = sender.setup("tcx-test-sender", 256, 256);
-        TEST(ok, "sender setup: succeeds");
-        TEST(sender.isSetup(), "sender setup: is setup");
-        TEST_EQ(sender.getName(), std::string("tcx-test-sender"), "sender setup: name matches");
-        sender.close();
-        TEST(!sender.isSetup(), "sender close: not setup");
-    }
-
-    {
-        tcx::NozzleSender sender;
-        TEST(sender.setup("tcx-test-1"), "sender setup twice: first setup");
-        TEST(sender.setup("tcx-test-2"), "sender setup twice: second setup");
-        TEST_EQ(sender.getName(), std::string("tcx-test-2"), "sender setup twice: name updated");
-    }
-
-    {
-        tcx::NozzleSender sender;
-        sender.setup("tcx-pixel-test", 4, 4);
-        std::vector<unsigned char> pixels(4 * 4 * 4, 128);
-        TEST(sender.send(pixels.data(), 4, 4, 4), "sender send: raw RGBA pixels");
-        TEST_EQ(sender.getWidth(), 4, "sender send: width updated");
-        TEST_EQ(sender.getHeight(), 4, "sender send: height updated");
-        TEST_EQ(sender.getFrameCount(), uint64_t(1), "sender send: frame count incremented");
-    }
-
-    {
-        tcx::NozzleSender sender;
-        sender.setup("tcx-r-test", 4, 4);
-        std::vector<unsigned char> pixels(4 * 4, 200);
-        TEST(sender.send(pixels.data(), 4, 4, 1), "sender send: single channel (R8)");
-    }
-
-    {
-        tcx::NozzleSender sender;
-        sender.setup("tcx-null-test", 4, 4);
-        TEST(!sender.send(nullptr, 4, 4, 4), "sender send: null pixels returns false");
     }
 
     {
@@ -131,54 +115,121 @@ int main() {
         TEST(!receiver.isConnected(), "receiver disconnect: still not connected");
     }
 
-    {
-        auto senders = tcx::NozzleReceiver::findSenders();
-        TEST_GT(senders.size(), size_t(0), "discovery: found at least one sender");
-        bool found = false;
-        for (auto &s : senders) {
-            if (s.name == "tcx-pixel-test" || s.name == "tcx-test-sender") {
-                found = true;
-                break;
+    // --- IPC tests ---
+
+    if (!have_ipc) {
+        SKIP("sender setup: succeeds");
+        SKIP("sender setup: is setup");
+        SKIP("sender setup: name matches");
+        SKIP("sender close: not setup after close");
+        SKIP("sender setup twice: first setup");
+        SKIP("sender setup twice: second setup");
+        SKIP("sender setup twice: name updated");
+        SKIP("sender send: raw RGBA pixels");
+        SKIP("sender send: width updated");
+        SKIP("sender send: height updated");
+        SKIP("sender send: frame count incremented");
+        SKIP("sender send: single channel (R8)");
+        SKIP("sender send: null pixels returns false");
+        SKIP("discovery: found at least one sender");
+        SKIP("discovery: found our test sender");
+        SKIP("cross-process: send succeeds");
+        SKIP("cross-process: connect succeeds");
+        SKIP("cross-process: is connected");
+        SKIP("cross-process: receive succeeds");
+        SKIP("multi-send: frame count is 5");
+    } else {
+        {
+            tcx::NozzleSender sender;
+            bool ok = sender.setup("tcx-test-sender", 256, 256);
+            TEST(ok, "sender setup: succeeds");
+            TEST(sender.isSetup(), "sender setup: is setup");
+            TEST_EQ(sender.getName(), std::string("tcx-test-sender"), "sender setup: name matches");
+            sender.close();
+            TEST(!sender.isSetup(), "sender close: not setup after close");
+        }
+
+        {
+            tcx::NozzleSender sender;
+            TEST(sender.setup("tcx-test-1"), "sender setup twice: first setup");
+            TEST(sender.setup("tcx-test-2"), "sender setup twice: second setup");
+            TEST_EQ(sender.getName(), std::string("tcx-test-2"), "sender setup twice: name updated");
+        }
+
+        {
+            tcx::NozzleSender sender;
+            sender.setup("tcx-pixel-test", 4, 4);
+            std::vector<unsigned char> pixels(4 * 4 * 4, 128);
+            TEST(sender.send(pixels.data(), 4, 4, 4), "sender send: raw RGBA pixels");
+            TEST_EQ(sender.getWidth(), 4, "sender send: width updated");
+            TEST_EQ(sender.getHeight(), 4, "sender send: height updated");
+            TEST_EQ(sender.getFrameCount(), uint64_t(1), "sender send: frame count incremented");
+        }
+
+        {
+            tcx::NozzleSender sender;
+            sender.setup("tcx-r-test", 4, 4);
+            std::vector<unsigned char> pixels(4 * 4, 200);
+            TEST(sender.send(pixels.data(), 4, 4, 1), "sender send: single channel (R8)");
+        }
+
+        {
+            tcx::NozzleSender sender;
+            sender.setup("tcx-null-test", 4, 4);
+            TEST(!sender.send(nullptr, 4, 4, 4), "sender send: null pixels returns false");
+        }
+
+        {
+            auto senders = tcx::NozzleReceiver::findSenders();
+            TEST_GT(senders.size(), size_t(0), "discovery: found at least one sender");
+            bool found = false;
+            for (auto &s : senders) {
+                if (s.name == "tcx-pixel-test" || s.name == "tcx-test-sender") {
+                    found = true;
+                    break;
+                }
+            }
+            TEST(found, "discovery: found our test sender");
+        }
+
+        {
+            tcx::NozzleSender sender;
+            sender.setup("tcx-cross-test", 8, 8);
+            std::vector<unsigned char> pixels(8 * 8 * 4, 255);
+            TEST(sender.send(pixels.data(), 8, 8, 4), "cross-process: send succeeds");
+
+            tcx::NozzleReceiver receiver;
+            TEST(receiver.connect("tcx-cross-test"), "cross-process: connect succeeds");
+            TEST(receiver.isConnected(), "cross-process: is connected");
+
+            tc::Pixels received;
+            bool received_ok = receiver.receive(received);
+            TEST(received_ok, "cross-process: receive succeeds");
+            if (received_ok) {
+                TEST_EQ(receiver.getWidth(), 8, "cross-process: width matches");
+                TEST_EQ(receiver.getHeight(), 8, "cross-process: height matches");
+                TEST(receiver.isFrameNew(), "cross-process: frame is new");
             }
         }
-        TEST(found, "discovery: found our test sender");
-    }
 
-    {
-        tcx::NozzleSender sender;
-        sender.setup("tcx-cross-test", 8, 8);
-        std::vector<unsigned char> pixels(8 * 8 * 4, 255);
-        TEST(sender.send(pixels.data(), 8, 8, 4), "cross-process: send succeeds");
-
-        tcx::NozzleReceiver receiver;
-        TEST(receiver.connect("tcx-cross-test"), "cross-process: connect succeeds");
-        TEST(receiver.isConnected(), "cross-process: is connected");
-
-        tc::Pixels received;
-        bool received_ok = receiver.receive(received);
-        TEST(received_ok, "cross-process: receive succeeds");
-        if (received_ok) {
-            TEST_EQ(receiver.getWidth(), 8, "cross-process: width matches");
-            TEST_EQ(receiver.getHeight(), 8, "cross-process: height matches");
-            TEST(receiver.isFrameNew(), "cross-process: frame is new");
+        {
+            tcx::NozzleSender sender;
+            sender.setup("tcx-multi-test", 2, 2);
+            std::vector<unsigned char> pixels(2 * 2 * 4, 0);
+            for (int i = 0; i < 5; i++) {
+                sender.send(pixels.data(), 2, 2, 4);
+            }
+            TEST_EQ(sender.getFrameCount(), uint64_t(5), "multi-send: frame count is 5");
         }
-    }
-
-    {
-        tcx::NozzleSender sender;
-        sender.setup("tcx-multi-test", 2, 2);
-        std::vector<unsigned char> pixels(2 * 2 * 4, 0);
-        for (int i = 0; i < 5; i++) {
-            sender.send(pixels.data(), 2, 2, 4);
-        }
-        TEST_EQ(sender.getFrameCount(), uint64_t(5), "multi-send: frame count is 5");
     }
 
     auto end = std::chrono::high_resolution_clock::now();
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     if (g_failed == 0) {
-        std::cout << std::endl << "\033[1;32m" << g_passed << "/" << g_total << " tests passed\033[0m" << std::endl;
+        std::cout << std::endl << "\033[1;32m" << g_passed << "/" << g_total << " tests passed";
+        if (g_skipped > 0) std::cout << " (" << g_skipped << " skipped)";
+        std::cout << "\033[0m" << std::endl;
     } else {
         std::cout << std::endl << "\033[1;31m" << g_failed << "/" << g_total << " tests failed\033[0m" << std::endl;
     }
