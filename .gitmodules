@@ -1,3 +1,6 @@
 [submodule "nozzle"]
 	path = nozzle
 	url = https://github.com/nozzle-io/nozzle.git
+[submodule "testApp/local_addons/tcxUnitTests"]
+	path = testApp/local_addons/tcxUnitTests
+	url = https://github.com/2bbb/tcxUnitTests.git
