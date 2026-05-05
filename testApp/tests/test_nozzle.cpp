@@ -66,12 +66,12 @@ static void skip(const char *name) {
 #define SKIP(...)         skip(__VA_ARGS__)
 
 static bool ipc_available() {
-    // Probe: try to create and immediately destroy a sender.
-    // If shm_open works, IPC is available.
     tcx::NozzleSender probe;
-    bool ok = probe.setup("_nozzle_ipc_probe__", 1, 1);
-    if (ok) probe.close();
-    return ok;
+    if (!probe.setup("_nozzle_ipc_probe__", 1, 1)) return false;
+    unsigned char px[4] = {0, 0, 0, 0};
+    bool send_ok = probe.send(px, 1, 1, 4);
+    probe.close();
+    return send_ok;
 }
 
 int main() {
