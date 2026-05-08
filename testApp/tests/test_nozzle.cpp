@@ -100,6 +100,8 @@ int main() {
         TEST_EQ(receiver.getSenderName(), std::string{}, "receiver default: empty name");
         TEST_EQ(receiver.getWidth(), 0, "receiver default: zero width");
         TEST_EQ(receiver.getHeight(), 0, "receiver default: zero height");
+        TEST_EQ(static_cast<int>(receiver.getFormat()), 0, "receiver default: format unknown");
+        TEST_EQ(static_cast<int>(receiver.getSemanticFormat()), 0, "receiver default: semantic_format unknown");
     }
 
     {
@@ -140,6 +142,7 @@ int main() {
         SKIP("cross-process: width matches");
         SKIP("cross-process: height matches");
         SKIP("cross-process: frame is new");
+        SKIP("cross-process: format populated after receive");
         SKIP("multi-send: frame count is 5");
     } else {
         {
@@ -217,6 +220,7 @@ int main() {
                 TEST_EQ(receiver.getWidth(), 8, "cross-process: width matches");
                 TEST_EQ(receiver.getHeight(), 8, "cross-process: height matches");
                 TEST(receiver.isFrameNew(), "cross-process: frame is new");
+                TEST(static_cast<int>(receiver.getFormat()) != 0, "cross-process: format populated after receive");
             }
         }
 

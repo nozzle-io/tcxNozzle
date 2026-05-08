@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include <nozzle/types.hpp>
+
 namespace trussc { class Pixels; class Texture; }
 namespace tc = trussc;
 
@@ -14,6 +16,8 @@ namespace tcx {
 struct NozzleSenderInfo {
     std::string name;
     std::string application_name;
+    nozzle::texture_format format{nozzle::texture_format::unknown};
+    nozzle::texture_format semantic_format{nozzle::texture_format::unknown};
 };
 
 class NozzleReceiver {
@@ -42,6 +46,8 @@ public:
     int getWidth() const;
     int getHeight() const;
     int getSenderFrameCount() const;
+    nozzle::texture_format getFormat() const;
+    nozzle::texture_format getSemanticFormat() const;
 
 private:
     struct Impl;

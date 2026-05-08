@@ -11,6 +11,8 @@ struct NozzleReceiver::Impl {
     std::string sender_name_{};
     int width_{0};
     int height_{0};
+    nozzle::texture_format format_{nozzle::texture_format::unknown};
+    nozzle::texture_format semantic_format_{nozzle::texture_format::unknown};
     bool connected_{false};
     bool frame_new_{false};
     std::unique_ptr<tc::Pixels> temp_pixels_;
@@ -24,6 +26,8 @@ struct NozzleReceiver::Impl {
         sender_name_.clear();
         width_ = 0;
         height_ = 0;
+        format_ = nozzle::texture_format::unknown;
+        semantic_format_ = nozzle::texture_format::unknown;
         frame_new_ = false;
     }
 };
@@ -82,6 +86,8 @@ bool NozzleReceiver::receive(tc::Pixels &pixels) {
 
     impl_->width_ = static_cast<int>(info.width);
     impl_->height_ = static_cast<int>(info.height);
+    impl_->format_ = info.format;
+    impl_->semantic_format_ = info.semantic_format;
 
     auto lock_result = nozzle::lock_frame_pixels_with_origin(frm, nozzle::texture_origin::top_left);
     if (!lock_result.ok()) {
@@ -150,6 +156,14 @@ int NozzleReceiver::getHeight() const {
 
 int NozzleReceiver::getSenderFrameCount() const {
     return 0;
+}
+
+nozzle::texture_format NozzleReceiver::getFormat() const {
+    return impl_->format_;
+}
+
+nozzle::texture_format NozzleReceiver::getSemanticFormat() const {
+    return impl_->semantic_format_;
 }
 
 } // namespace tcx
