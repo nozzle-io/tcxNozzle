@@ -1,5 +1,23 @@
 #include "tcxNozzleReceiver.h"
 #include <TrussC.h>
+
+// ---- #41 debug probe: exception/try/catch diagnostics ----
+#define _NOZZLE_STRINGIFY_IMPL(x) #x
+#define _NOZZLE_STRINGIFY(x) _NOZZLE_STRINGIFY_IMPL(x)
+#pragma message("NOZZLE_HAS_EXCEPTIONS=" _NOZZLE_STRINGIFY(NOZZLE_HAS_EXCEPTIONS))
+#ifdef __EXCEPTIONS
+#pragma message("__EXCEPTIONS=defined")
+#else
+#pragma message("__EXCEPTIONS=undefined")
+#endif
+#ifdef try
+#pragma message("try macro is defined")
+#endif
+#ifdef catch
+#pragma message("catch macro is defined")
+#endif
+// ---- end #41 debug probe ----
+
 #include <nozzle/nozzle.hpp>
 #include <nozzle/pixel_access.hpp>
 #include <cstring>
