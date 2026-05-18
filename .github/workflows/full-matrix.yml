@@ -1,0 +1,18 @@
+name: Full Matrix CI
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * *'
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    uses: 2bbb/trussc-actions/.github/workflows/build-addon.yml@main
+    with:
+      addon_name: "tcxNozzle"
+      test_app: "testApp"
+      test_mode: "build-only"
+      extra_apt_packages: "libdrm-dev libgbm-dev libegl-dev libgl-dev"

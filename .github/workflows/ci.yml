@@ -8,9 +8,45 @@ on:
 
 jobs:
   build:
-    uses: 2bbb/trussc-actions/.github/workflows/build-addon.yml@main
-    with:
-      addon_name: "tcxNozzle"
-      test_app: "testApp"
-      test_mode: "build-only"
-      extra_apt_packages: "libdrm-dev libgbm-dev libegl-dev libgl-dev"
+    name: build / build / build-windows (Release)
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          path: tcxNozzle
+
+      - name: Clone TrussC
+        run: git clone --depth 1 --branch main https://github.com/TrussC-org/TrussC.git TrussC
+
+      - name: Link addon into TrussC (Windows)
+        run: New-Item -ItemType SymbolicLink -Path "TrussC/addons/tcxNozzle" -Target "$env:GITHUB_WORKSPACE/tcxNozzle"
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Cache trusscli build
+        uses: actions/cache@v4
+        with:
+          path: |
+            TrussC/core/build-windows
+            TrussC/tools/build
+          key: trusscli-windows-v1-main
+
+      - name: Build trusscli (Windows)
+        run: |
+          cd TrussC
+          ./tools/build_win.bat
+
+      - name: Use existing test app
+        shell: bash
+        run: |
+          cd "$GITHUB_WORKSPACE/tcxNozzle/testApp"
+          "$GITHUB_WORKSPACE/TrussC/tools/bin/trusscli.exe" update -p .
+
+      - name: Build
+        shell: bash
+        run: |
+          cd "$GITHUB_WORKSPACE/tcxNozzle/testApp/build-windows"
+          cmake --build . --config Release
