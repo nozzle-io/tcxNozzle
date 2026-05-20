@@ -4,12 +4,13 @@ on:
   workflow_dispatch:
   push:
     branches: [main, stable]
+    tags: ['v*']
   pull_request:
     branches: [main, stable]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref_type != 'tag' && github.event_name != 'release' }}
 
 jobs:
   build:
@@ -19,3 +20,97 @@ jobs:
       test_app: "testApp"
       test_mode: "build-only"
       extra_apt_packages: "libdrm-dev libgbm-dev libegl-dev libgl-dev"
+
+  package:
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Prepare package metadata
+        id: meta
+        run: |
+          repo="${{ github.event.repository.name }}"
+          short_sha="${GITHUB_SHA::7}"
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            base="${repo}-${GITHUB_REF_NAME}"
+          elif [[ "${GITHUB_REF}" == refs/heads/main ]]; then
+            base="${repo}-latest-${short_sha}"
+          elif [[ "${GITHUB_REF}" == refs/heads/stable ]]; then
+            base="${repo}-stable-${short_sha}"
+          else
+            base="${repo}-ci-${short_sha}"
+          fi
+          echo "package_root=${base}" >> "$GITHUB_OUTPUT"
+          echo "package_name=${base}.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Assemble source addon package
+        run: |
+          root="dist/${{ steps.meta.outputs.package_root }}"
+          mkdir -p "$root"
+          cp README.md LICENSE CMakeLists.txt "$root/"
+          cp -R src nozzle testApp "$root/"
+          find "$root" \( -name .git -o -name build -o -name .cache -o -name CMakeFiles \) -prune -exec rm -rf {} +
+          find "$root" -name '*.o' -delete
+
+      - name: Verify package contents
+        run: |
+          root="dist/${{ steps.meta.outputs.package_root }}"
+          test -f "$root/README.md"
+          test -f "$root/LICENSE"
+          test -f "$root/src/tcxNozzle.h"
+          test -f "$root/nozzle/include/nozzle/nozzle.hpp"
+
+      - name: Create archive
+        run: |
+          cd dist
+          zip -r "${{ steps.meta.outputs.package_name }}" "${{ steps.meta.outputs.package_root }}/"
+
+      - name: Verify archive
+        run: |
+          archive="dist/${{ steps.meta.outputs.package_name }}"
+          unzip -l "$archive" | grep -F '${{ steps.meta.outputs.package_root }}/src/tcxNozzle.h'
+          unzip -l "$archive" | grep -F '${{ steps.meta.outputs.package_root }}/nozzle/include/nozzle/nozzle.hpp'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.package_root }}
+          path: dist/${{ steps.meta.outputs.package_name }}
+
+      - name: Check versioned release asset does not exist
+        if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          asset="${{ steps.meta.outputs.package_name }}"
+          if gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --json assets --jq '.assets[].name' > existing-assets.txt 2>/dev/null; then
+            if grep -Fx "$asset" existing-assets.txt; then
+              echo "versioned release asset already exists: $asset" >&2
+              exit 1
+            fi
+          else
+            echo "No existing release for ${GITHUB_REF_NAME}; upload may create it."
+          fi
+
+      - name: Upload latest development snapshot
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest development snapshot
+          prerelease: true
+          body: |
+            Development snapshot from main.
+            Commit: ${{ github.sha }}
+          files: dist/${{ steps.meta.outputs.package_name }}
+
+      - name: Upload versioned release
+        if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ steps.meta.outputs.package_name }}
