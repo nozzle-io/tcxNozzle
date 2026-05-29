@@ -127,7 +127,12 @@ bool NozzleSender::send(const unsigned char *pixels, int width, int height, int 
         }
     }
 
-    nozzle::unlock_writable_pixels(writable);
+    auto unlock_result = nozzle::unlock_writable_pixels_checked(writable);
+    if (!unlock_result.ok()) {
+        // Commit rejects failed-unlock frames and releases the sender slot.
+        (void)sender.commit_frame(writable);
+        return false;
+    }
     auto commit_result = sender.commit_frame(writable);
     if (!commit_result.ok()) return false;
 
