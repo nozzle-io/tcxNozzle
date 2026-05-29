@@ -110,7 +110,10 @@ bool NozzleSender::send(const unsigned char *pixels, int width, int height, int 
 
     auto &writable = frame_result.value();
     auto lock_result = nozzle::lock_writable_pixels_with_origin(writable, nozzle::texture_origin::top_left);
-    if (!lock_result.ok()) return false;
+    if (!lock_result.ok()) {
+        (void)sender.discard_frame(writable);
+        return false;
+    }
 
     auto &mapped = lock_result.value();
     uint32_t src_row_bytes = static_cast<uint32_t>(width) * channels;
@@ -129,8 +132,7 @@ bool NozzleSender::send(const unsigned char *pixels, int width, int height, int 
 
     auto unlock_result = nozzle::unlock_writable_pixels_checked(writable);
     if (!unlock_result.ok()) {
-        // Commit rejects failed-unlock frames and releases the sender slot.
-        (void)sender.commit_frame(writable);
+        (void)sender.discard_frame(writable);
         return false;
     }
     auto commit_result = sender.commit_frame(writable);
