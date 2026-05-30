@@ -5,5 +5,5 @@
   "category": "graphics",
   "keywords": ["texture-sharing", "spout", "syphon", "ipc", "gpu", "nozzle"],
   "dependencies": [],
-  "platforms": ["macos"]
+  "platforms": ["macos", "windows", "linux"]
 }
