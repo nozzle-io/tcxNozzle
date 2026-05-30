@@ -22,7 +22,6 @@ private:
 
     NozzleReceiver receiver_;
     Texture tex_;
-    Font font_;
 
     vector<NozzleSenderInfo> senders_;
     float lastScan_ = 0.0f;

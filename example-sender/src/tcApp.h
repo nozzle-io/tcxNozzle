@@ -22,5 +22,4 @@ private:
 
     NozzleSender sender_;
     Fbo fbo_;
-    Font font_;
 };

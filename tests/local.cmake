@@ -12,3 +12,10 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMENT "Running headless tests..."
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
+
+# Throwaway windowed GPU round-trip verifier (manual run, not auto-run).
+add_executable(gpu_roundtrip ${CMAKE_CURRENT_SOURCE_DIR}/gpu_roundtrip.cpp)
+target_link_libraries(gpu_roundtrip PRIVATE tcxNozzle)
+set_target_properties(gpu_roundtrip PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin"
+)

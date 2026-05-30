@@ -1,12 +1,11 @@
 #include "tcApp.h"
 
 void tcApp::setup() {
-    font_.load(TC_FONT_SANS, 14);
     rescan();
 }
 
 void tcApp::rescan() {
-    senders_ = NozzleReceiver::findSenders();
+    senders_ = NozzleReceiver::listSenders();
     lastScan_ = getElapsedTimef();
 
     // Auto-connect to the first sender we find if we aren't already connected.
@@ -39,18 +38,18 @@ void tcApp::draw() {
 
     setColor(1.0f);
     if (receiver_.isConnected()) {
-        font_.drawString("connected: \"" + receiver_.getSenderName() + "\"  " +
+        drawBitmapString("connected: \"" + receiver_.getSenderName() + "\"  " +
                        to_string(receiver_.getWidth()) + "x" + to_string(receiver_.getHeight()),
                    16, 24);
     } else {
-        font_.drawString("no sender connected — start example-sender", 16, 24);
+        drawBitmapString("no sender connected — start example-sender", 16, 24);
     }
 
     // List discovered senders.
-    font_.drawString("senders found: " + to_string(senders_.size()) + "  (press R to rescan)", 16, 44);
+    drawBitmapString("senders found: " + to_string(senders_.size()) + "  (press R to rescan)", 16, 44);
     float y = 68;
     for (auto& s : senders_) {
-        font_.drawString("- " + s.name + " (" + s.application_name + ")", 28, y);
+        drawBitmapString("- " + s.getName() + " (" + s.getApplicationName() + ")", 28, y);
         y += 20;
     }
 }

@@ -13,11 +13,22 @@ namespace tc = trussc;
 
 namespace tcx {
 
+// GPU backend a sender is published through. Mirrors nozzle::backend_type so the
+// public header doesn't force users to include <nozzle/types.hpp>.
+enum class NozzleBackend { Unknown, D3D11, Metal, OpenGL, DmaBuf };
+
+// One entry from NozzleReceiver::listSenders(). Public fields with convenience
+// getters, matching the TrussC device-info convention (VideoDeviceInfo etc.).
 struct NozzleSenderInfo {
     std::string name;
-    std::string application_name;
-    nozzle::texture_format format{nozzle::texture_format::unknown};
-    nozzle::texture_format semantic_format{nozzle::texture_format::unknown};
+    std::string applicationName;
+    std::string id;                              // disambiguates same-named senders
+    NozzleBackend backend = NozzleBackend::Unknown;
+
+    const std::string &getName() const { return name; }
+    const std::string &getApplicationName() const { return applicationName; }
+    const std::string &getId() const { return id; }
+    NozzleBackend getBackend() const { return backend; }
 };
 
 class NozzleReceiver {
@@ -30,13 +41,18 @@ public:
     NozzleReceiver(NozzleReceiver &&) noexcept;
     NozzleReceiver &operator=(NozzleReceiver &&) noexcept;
 
-    static std::vector<NozzleSenderInfo> findSenders();
+    // Discover senders currently sharing on this machine. Static + returns a
+    // vector, matching the TrussC convention (AudioEngine::listDevices() etc.).
+    static std::vector<NozzleSenderInfo> listSenders();
 
     bool connect(const std::string &senderName);
     bool connect(const NozzleSenderInfo &source);
     void disconnect();
     bool isConnected() const;
 
+    // Receive into CPU pixels (always available) or a GPU Texture. The Texture
+    // overload uses a GPU-to-GPU blit when the backend supports it (zero CPU
+    // readback), falling back to the CPU path otherwise.
     bool receive(tc::Pixels &pixels);
     bool receive(tc::Texture &texture);
 

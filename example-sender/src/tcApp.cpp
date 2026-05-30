@@ -5,7 +5,6 @@ void tcApp::setup() {
         logError() << "NozzleSender setup failed";
     }
     fbo_.allocate(kShareW, kShareH);
-    font_.load(TC_FONT_SANS, 14);
 }
 
 void tcApp::update() {
@@ -36,7 +35,9 @@ void tcApp::update() {
     drawCircle(cx, cy, 18.0f + 6.0f * sin(t * 2.0f));
     fbo_.end();
 
-    sender_.send(fbo_);
+    // Send the Fbo's texture via the GPU zero-copy path (blits straight into
+    // nozzle's shared texture; no CPU readback).
+    sender_.send(fbo_.getTexture());
 }
 
 void tcApp::draw() {
@@ -44,6 +45,6 @@ void tcApp::draw() {
     fbo_.draw(0, 0, getWindowWidth(), getWindowHeight());
 
     setColor(1.0f);
-    font_.drawString("sender: \"" + sender_.getName() + "\"", 16, 24);
-    font_.drawString("frames sent: " + to_string(sender_.getFrameCount()), 16, 44);
+    drawBitmapString("sender: \"" + sender_.getName() + "\"", 16, 24);
+    drawBitmapString("frames sent: " + to_string(sender_.getFrameCount()), 16, 44);
 }
