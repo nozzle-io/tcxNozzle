@@ -1,0 +1,9 @@
+{
+  "description": "Cross-process GPU texture sharing (Syphon/Spout-style) via nozzle",
+  "author": "2bbb",
+  "license": "MIT",
+  "category": "graphics",
+  "keywords": ["texture-sharing", "spout", "syphon", "ipc", "gpu", "nozzle"],
+  "dependencies": [],
+  "platforms": ["macos"]
+}

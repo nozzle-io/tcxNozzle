@@ -1,76 +1,124 @@
 # tcxNozzle
 
-> This codebase is currently in its AI-slob prototyping phase: the code runs on momentum, vibes, and plausible intent.
-> Proper debugging will be introduced once demand graduates from hypothetical to measurable.
+A [TrussC](https://github.com/TrussC-org/TrussC) addon for **cross-process GPU
+texture sharing**, built on top of [nozzle](https://github.com/nozzle-io/nozzle).
 
-[Nozzle](https://github.com/nozzle-io/nozzle) GPU texture sharing addon for [TrussC](https://github.com/TrussC-org/TrussC).
+Share textures between separate applications on the same machine — a Syphon
+(macOS) / Spout (Windows) style workflow, exposed through a small TrussC-flavored
+API (`NozzleSender` / `NozzleReceiver`).
 
-Share textures between TrussC applications via nozzle's cross-process GPU sharing (Metal/IOSurface on macOS, D3D11 on Windows, DMA-BUF/OpenGL on Linux).
+> **Status:** work in progress. The macOS (Metal/IOSurface) path is the one
+> actively exercised here; Windows (D3D11) and Linux (DMA-BUF) build through
+> nozzle but are not yet verified in TrussC. nozzle itself is early-stage and
+> uses **its own protocol — it is *not* wire-compatible with Syphon or Spout**,
+> so a nozzle sender is only visible to other nozzle/tcxNozzle apps.
 
-## Disclaimer / Notice
+---
 
-This library is currently a work in progress and contains many incomplete features and unverified implementations.
-Although it may appear usable at first glance, it may not function correctly.
+## Install
 
-Please use it with the understanding that no guarantees are made regarding its behavior, and perform debugging, validation, and review as needed.
-If you encounter problems, please do not become angry; instead, contributions in the form of Issues or Pull Requests would be greatly appreciated.
+This addon vendors nozzle as a git **submodule**, so clone recursively:
+
+```bash
+git clone --recursive https://github.com/tettou771/tcxNozzle
+# already cloned without --recursive?
+git submodule update --init --recursive
+```
+
+Then list it in your project's `addons.make`:
+
+```
+tcxNozzle
+```
+
+A root `CMakeLists.txt` is provided (it pulls in the nozzle submodule and links
+the platform frameworks), so TrussC builds it automatically.
+
+---
 
 ## Usage
 
 ### Sender
 
 ```cpp
-#include "tcxNozzle.h"
+#include <tcxNozzle.h>
 
-tcx::NozzleSender sender;
-sender.setup("myApp", width, height);
+NozzleSender sender;
+sender.setup("myApp");          // name other apps discover you by
 
-// Send from Pixels
-sender.send(pixels);
-
-// Send from FBO
+// send from a Texture / Fbo (GPU path) ...
 sender.send(fbo);
+sender.send(texture);
+
+// ... or from CPU pixels
+sender.send(pixels);
+sender.send(data, width, height, /*channels=*/4);
 ```
 
 ### Receiver
 
 ```cpp
-#include "tcxNozzle.h"
+#include <tcxNozzle.h>
 
-// Discover senders
-auto senders = tcx::NozzleReceiver::findSenders();
+// discover what's currently being shared
+for (auto& s : NozzleReceiver::findSenders()) {
+    logNotice() << s.name << " (" << s.application_name << ")";
+}
 
-// Connect
-tcx::NozzleReceiver receiver;
+NozzleReceiver receiver;
 receiver.connect("myApp");
 
-// Receive into Texture
-tc::Texture tex;
-if (receiver.receive(tex)) {
+Texture tex;
+if (receiver.receive(tex) && receiver.isFrameNew()) {
     tex.draw(0, 0);
 }
 ```
 
-## Build
+See [`example-sender`](example-sender) and [`example-receiver`](example-receiver)
+for runnable apps — launch both, and the receiver picks up the sender's frames.
 
-Add to your TrussC project's `addons.make`:
-```
-tcxNozzle
-```
-
-Or use as a CMake subdirectory. nozzle is included as a submodule.
+---
 
 ## API
 
-| Class | Key Methods |
+| Class | Key methods |
 |-------|-------------|
-| `tcx::NozzleSender` | `setup()`, `send(Pixels&)`, `send(Fbo&)`, `send(data, w, h)` |
-| `tcx::NozzleReceiver` | `findSenders()`, `connect()`, `receive(Pixels&)`, `receive(Texture&)` |
+| `NozzleSender`   | `setup(name, w?, h?)`, `send(Texture&)`, `send(Fbo&)`, `send(Pixels&)`, `send(data, w, h, ch)`, `close()`, `isSetup()`, `getName()`, `getWidth()`, `getHeight()`, `getFrameCount()` |
+| `NozzleReceiver` | `findSenders()`, `connect(name)`, `connect(NozzleSenderInfo&)`, `disconnect()`, `isConnected()`, `receive(Texture&)`, `receive(Pixels&)`, `isFrameNew()`, `getSenderName()`, `getWidth()`, `getHeight()`, `getFormat()` |
+
+The GPU `send(Texture&)` / `send(Fbo&)` path blits directly into nozzle's shared
+texture on Metal/D3D11. When a native blit isn't available it falls back to a
+CPU pixel copy automatically.
+
+---
+
+## Examples
+
+| Example | What it shows |
+|---------|---------------|
+| [`example-sender`](example-sender)     | Draws an animated pattern into an Fbo and publishes it every frame. |
+| [`example-receiver`](example-receiver) | Discovers senders, connects to one, and draws the received texture. |
+
+Run `example-sender` first, then `example-receiver`.
+
+## Tests
+
+[`tests`](tests) is a small headless harness (`tests/test_nozzle.cpp`) covering
+sender/receiver defaults, setup, raw-pixel send, discovery, and a cross-process
+round trip. Build & run it like any TrussC project:
+
+```bash
+cd tests
+trusscli run     # builds the host app, then runs the headless tests
+```
+
+---
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
 
 Third-party dependencies:
 
 - [nozzle](https://github.com/nozzle-io/nozzle) — MIT
+- [plog](https://github.com/SergiusTheBest/plog) (via nozzle) — MIT

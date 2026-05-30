@@ -17,7 +17,7 @@ jobs:
     uses: 2bbb/trussc-actions/.github/workflows/build-addon.yml@build-addon-cache-v1
     with:
       addon_name: "tcxNozzle"
-      test_app: "testApp"
+      test_app: "example-sender"
       test_mode: "build-only"
       extra_apt_packages: "libdrm-dev libgbm-dev libegl-dev libgl-dev"
 
@@ -52,8 +52,8 @@ jobs:
         run: |
           root="dist/${{ steps.meta.outputs.package_root }}"
           mkdir -p "$root"
-          cp README.md LICENSE CMakeLists.txt "$root/"
-          cp -R src nozzle testApp "$root/"
+          cp README.md LICENSE CMakeLists.txt addon.json "$root/"
+          cp -R src nozzle example-sender example-receiver tests "$root/"
           find "$root" \( -name .git -o -name build -o -name .cache -o -name CMakeFiles \) -prune -exec rm -rf {} +
           find "$root" -name '*.o' -delete
 

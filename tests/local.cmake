@@ -1,7 +1,6 @@
-add_executable(headless_test ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_nozzle.cpp)
-target_include_directories(headless_test PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
+# Builds the headless functional test (test_nozzle.cpp) as a second executable
+# alongside the host app, and runs it after every build.
+add_executable(headless_test ${CMAKE_CURRENT_SOURCE_DIR}/test_nozzle.cpp)
 target_link_libraries(headless_test PRIVATE tcxNozzle)
 set_target_properties(headless_test PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin"

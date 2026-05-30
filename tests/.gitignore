@@ -1,0 +1,18 @@
+# Generated build config
+CMakePresets.json
+
+# Build directories
+build/
+build-*/
+
+# Binary output
+bin/
+
+# IDE specific
+.vscode/
+.vs/
+.cache/
+
+# OS specific
+.DS_Store
+Thumbs.db
