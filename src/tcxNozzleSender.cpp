@@ -243,7 +243,13 @@ bool NozzleSender::send(const tc::Texture &texture) {
         fbo->allocate(w, h);
     }
     fbo->begin();
-    texture.draw(0, 0);
+    // Assume the source texture is an FBO color attachment (the typical
+    // streaming case, e.g. sender.send(fbo.getTexture())). GL backends store
+    // those textures bottom-to-top, so we sample with V flipped — matching
+    // what Fbo::draw does for on-screen display. Without this the blit into
+    // temp_fbo is upside-down, and after the subsequent readPixels Y-flip
+    // the receiver sees a vertically mirrored image.
+    texture.drawFlippedY(0, 0, static_cast<float>(w), static_cast<float>(h));
     fbo->end();
     return send(*fbo);
 }
