@@ -229,6 +229,12 @@ bool NozzleSender::send(const tc::Texture &texture) {
         return true;
     }
 
+    // CPU fallback path acquires its own writable frame through the
+    // recursive send(byte*) call below, so release this one first —
+    // otherwise we leak a ring slot every frame and acquire fails after
+    // ring_buffer_size frames.
+    (void)sender.discard_frame(writable);
+
     if (!impl_->temp_fbo_) {
         impl_->temp_fbo_ = std::make_unique<tc::Fbo>();
     }
