@@ -19,3 +19,14 @@ target_link_libraries(gpu_roundtrip PRIVATE tcxNozzle)
 set_target_properties(gpu_roundtrip PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin"
 )
+
+# Reference sender/receiver using the nozzle C++ API directly (no tcxNozzle
+# wrapper) — a "foreign" implementation for interop / orientation testing.
+# Console apps; the receiver renders frames as ASCII. Manual run.
+add_executable(reference_sender ${CMAKE_CURRENT_SOURCE_DIR}/reference_sender.cpp)
+target_link_libraries(reference_sender PRIVATE tcxNozzle)
+add_executable(reference_receiver ${CMAKE_CURRENT_SOURCE_DIR}/reference_receiver.cpp)
+target_link_libraries(reference_receiver PRIVATE tcxNozzle)
+set_target_properties(reference_sender reference_receiver PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin"
+)
