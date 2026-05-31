@@ -75,6 +75,21 @@ bool NozzleSender::setup(const std::string &name, int width, int height) {
     desc.name = name;
     desc.application_name = "TrussC";
     desc.ring_buffer_size = 3;
+
+    // sokol と同じ GPU デバイスを nozzle に注入する。
+    // これをしないと nozzle が独自の D3D11/Metal デバイスを生成してしまい、
+    // send() の GPU ブリット(CopySubresourceRegion / blit encoder)が
+    // sokol デバイス → nozzle デバイスのデバイス跨ぎコピーになって
+    // クラッシュする(D3D11 では CORRUPTED_PARAMETER で即落ち)。
+#if NOZZLE_HAS_D3D11
+    desc.native_device.backend = nozzle::backend_type::d3d11;
+    desc.native_device.device = const_cast<void *>(sg_d3d11_device());
+    desc.native_device.context = const_cast<void *>(sg_d3d11_device_context());
+#elif NOZZLE_HAS_METAL
+    desc.native_device.backend = nozzle::backend_type::metal;
+    desc.native_device.device = const_cast<void *>(sg_mtl_device());
+#endif
+
     auto result = nozzle::sender::create(std::move(desc));
     if (!result.ok()) return false;
     impl_->sender_ = std::move(result.value());
