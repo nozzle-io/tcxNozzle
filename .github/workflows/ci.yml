@@ -52,8 +52,8 @@ jobs:
         run: |
           root="dist/${{ steps.meta.outputs.package_root }}"
           mkdir -p "$root"
-          cp README.md LICENSE CMakeLists.txt "$root/"
-          cp -R src nozzle testApp "$root/"
+          cp README.md LICENSE CMakeLists.txt addon.json "$root/"
+          cp -R src nozzle testApp example-sender example-receiver "$root/"
           find "$root" \( -name .git -o -name build -o -name .cache -o -name CMakeFiles \) -prune -exec rm -rf {} +
           find "$root" -name '*.o' -delete
 
@@ -62,6 +62,7 @@ jobs:
           root="dist/${{ steps.meta.outputs.package_root }}"
           test -f "$root/README.md"
           test -f "$root/LICENSE"
+          test -f "$root/addon.json"
           test -f "$root/src/tcxNozzle.h"
           test -f "$root/nozzle/include/nozzle/nozzle.hpp"
 
