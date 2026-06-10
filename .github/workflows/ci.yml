@@ -2,6 +2,15 @@ name: CI
 
 on:
   workflow_dispatch:
+    inputs:
+      trusscli_prebuilt:
+        description: 'trusscli prebuilt mode passed to trussc-actions (auto/off/strict)'
+        type: choice
+        default: auto
+        options:
+          - auto
+          - off
+          - strict
   push:
     branches: [main, stable]
     tags: ['v*']
@@ -14,12 +23,15 @@ concurrency:
 
 jobs:
   build:
-    uses: 2bbb/trussc-actions/.github/workflows/build-addon.yml@build-addon-cache-v1
+    uses: 2bbb/trussc-actions/.github/workflows/build-addon.yml@build-addon-prebuilt-v1
     with:
       addon_name: "tcxNozzle"
       test_app: "testApp"
       test_mode: "build-only"
       extra_apt_packages: "libdrm-dev libgbm-dev libegl-dev libgl-dev"
+      trussc_ref: "v0.6.0"
+      trusscli_prebuilt: ${{ github.event.inputs.trusscli_prebuilt || 'auto' }}
+      trusscli_prebuilt_tag: "trusscli-v0.6.0-build-addon-prebuilt-v1"
 
   package:
     needs: [build]
