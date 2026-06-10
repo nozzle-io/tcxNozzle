@@ -15,6 +15,13 @@ on:
         description: 'trusscli cache key suffix; set a unique value to force fallback cold-build validation'
         type: string
         default: 'v3'
+      linux_ccache:
+        description: 'Linux ccache mode passed to trussc-actions (auto/off)'
+        type: choice
+        default: auto
+        options:
+          - 'auto'
+          - 'off'
   push:
     branches: [main, stable]
     tags: ['v*']
@@ -27,7 +34,7 @@ concurrency:
 
 jobs:
   build:
-    uses: 2bbb/trussc-actions/.github/workflows/build-addon.yml@build-addon-prebuilt-v3
+    uses: 2bbb/trussc-actions/.github/workflows/build-addon.yml@build-addon-prebuilt-v4
     with:
       addon_name: "tcxNozzle"
       test_app: "testApp"
@@ -36,6 +43,7 @@ jobs:
       trussc_ref: "v0.6.0"
       trusscli_prebuilt: ${{ github.event.inputs.trusscli_prebuilt || 'auto' }}
       cache_key_suffix: ${{ github.event.inputs.cache_key_suffix || 'v3' }}
+      linux_ccache: ${{ github.event.inputs.linux_ccache || 'auto' }}
       trusscli_prebuilt_tag: "trusscli-v0.6.0-build-addon-prebuilt-v1"
 
   package:
