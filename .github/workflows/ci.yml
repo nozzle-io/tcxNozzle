@@ -11,6 +11,10 @@ on:
           - 'auto'
           - 'off'
           - 'strict'
+      cache_key_suffix:
+        description: 'trusscli cache key suffix; set a unique value to force fallback cold-build validation'
+        type: string
+        default: 'v3'
   push:
     branches: [main, stable]
     tags: ['v*']
@@ -31,6 +35,7 @@ jobs:
       extra_apt_packages: "libdrm-dev libgbm-dev libegl-dev libgl-dev"
       trussc_ref: "v0.6.0"
       trusscli_prebuilt: ${{ github.event.inputs.trusscli_prebuilt || 'auto' }}
+      cache_key_suffix: ${{ github.event.inputs.cache_key_suffix || 'v3' }}
       trusscli_prebuilt_tag: "trusscli-v0.6.0-build-addon-prebuilt-v1"
 
   package:
