@@ -8,9 +8,9 @@ on:
         type: choice
         default: auto
         options:
-          - auto
-          - off
-          - strict
+          - 'auto'
+          - 'off'
+          - 'strict'
   push:
     branches: [main, stable]
     tags: ['v*']
