@@ -34,7 +34,7 @@ concurrency:
 
 jobs:
   build:
-    uses: 2bbb/trussc-actions/.github/workflows/build-addon.yml@build-addon-prebuilt-v4
+    uses: 2bbb/trussc-actions/.github/workflows/build-addon.yml@404cc610f124be55d68aef31f780b63c1f847b7e
     with:
       addon_name: "tcxNozzle"
       test_app: "testApp"
